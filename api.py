@@ -34,6 +34,32 @@ app.add_middleware(
 )
 
 
+@app.on_event("startup")
+async def startup_event():
+    """Authenticate with Hugging Face and pre-load models if possible."""
+    # Authenticate with Hugging Face if token is available
+    # HF Spaces automatically provides HF_TOKEN, but we also check HUGGINGFACE_TOKEN
+    hf_token = os.environ.get("HF_TOKEN") or os.environ.get("HUGGINGFACE_TOKEN")
+    if hf_token:
+        try:
+            from huggingface_hub import login
+            login(token=hf_token)
+            print("✓ Authenticated with Hugging Face")
+        except Exception as e:
+            print(f"⚠ Warning: Failed to authenticate with HF: {e}")
+    else:
+        print("⚠ Warning: No HF_TOKEN found. Gated models may not work.")
+        print("  Set HF_TOKEN in Space Settings → Secrets for gated model access.")
+    
+    # Check if stamp model exists
+    stamp_model_path = Path("stamp_detector/stamp_model.pt")
+    if stamp_model_path.exists():
+        print("✓ Stamp model found")
+    else:
+        print("⚠ Warning: Stamp model not found at stamp_detector/stamp_model.pt")
+        print("  Please upload stamp_model.pt to the Space.")
+
+
 @app.get("/")
 async def root():
     """Health check endpoint."""

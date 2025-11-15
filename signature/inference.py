@@ -35,9 +35,12 @@ def detect_signatures(image_path, model=None, output_dir=None, signatures_dir=No
             model_path = str(local_model_path)
         else:
             try:
+                # Get HF token from environment (for gated models)
+                hf_token = os.environ.get("HF_TOKEN") or os.environ.get("HUGGINGFACE_TOKEN")
                 model_path = hf_hub_download(
                     repo_id="tech4humans/yolov8s-signature-detector",
-                    filename="yolov8s.pt"
+                    filename="yolov8s.pt",
+                    token=hf_token  # Pass token for gated repos
                 )
             except Exception as e:
                 raise RuntimeError(f"Failed to load signature model: {e}")
