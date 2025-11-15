@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+documents/
+
+# Output directories
+outputs/
+output/
+labelled/
+pipeline_outputs/
+
+# Model files (except stamp model which we'll handle separately)
+# *.pt
+*.pth
+*.onnx
+*.h5
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+venv/
+env/
+ENV/
+
