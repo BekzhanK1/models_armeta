@@ -99,6 +99,70 @@ Health check endpoint.
 ### `GET /docs`
 Interactive API documentation (Swagger UI).
 
+## Batch Processing
+
+For processing multiple PDF files locally, use the `process_all_pdfs.py` script to batch process all PDFs in a folder and generate a single JSON file with annotations.
+
+### Basic Usage
+
+Process all PDFs in the `documents` folder:
+```bash
+python process_all_pdfs.py
+```
+
+This will:
+- Process all PDF files in the `documents/` folder
+- Detect signatures and stamps on each page
+- Generate a single JSON file: `all_annotations.json`
+- Only include pages that have annotations
+
+### Advanced Options
+
+```bash
+python process_all_pdfs.py \
+  --documents-dir documents \
+  --output results.json \
+  --dpi 300 \
+  --stamp-conf 0.3
+```
+
+**Parameters**:
+- `--documents-dir`: Directory containing PDF files (default: `documents`)
+- `--output`: Output JSON file path (default: `all_annotations.json`)
+- `--dpi`: DPI for PDF to image conversion (default: 200)
+- `--stamp-conf`: Confidence threshold for stamp detection (default: 0.25)
+- `--stamp-model`: Path to stamp model (default: `stamp_detector/stamp_model.pt`)
+
+### Output Format
+
+The script generates a JSON file with the following structure:
+```json
+{
+  "filename.pdf": {
+    "page_1": {
+      "annotations": [
+        {
+          "annotation_1": {
+            "category": "signature",
+            "bbox": {
+              "x": 500,
+              "y": 800,
+              "width": 200,
+              "height": 100
+            },
+            "area": 20000
+          }
+        }
+      ],
+      "page_size": {
+        "width": 1654,
+        "height": 2339
+      }
+    }
+  }
+}
+```
+
 ## Response Format
 
 The API returns a JSON object with the following structure:
