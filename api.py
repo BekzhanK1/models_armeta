@@ -9,6 +9,8 @@ import tempfile
 from pathlib import Path
 from typing import Optional
 from urllib.parse import urlparse
+from concurrent.futures import ThreadPoolExecutor
+import asyncio
 
 from fastapi import FastAPI, File, UploadFile, HTTPException, Query
 from fastapi.responses import JSONResponse
@@ -33,13 +35,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Thread pool executor for running blocking CPU/GPU operations concurrently
+# This allows multiple PDFs to be processed in parallel
+executor = ThreadPoolExecutor(max_workers=4)  # Adjust based on your GPU/CPU capacity
+
 
 @app.on_event("startup")
 async def startup_event():
     """Authenticate with Hugging Face and pre-load models if possible."""
     # Authenticate with Hugging Face if token is available
     # HF Spaces automatically provides HF_TOKEN, but we also check HUGGINGFACE_TOKEN
-    hf_token = os.environ.get("HF_TOKEN") or os.environ.get("HUGGINGFACE_TOKEN")
+    hf_token = os.environ.get(
+        "HF_TOKEN") or os.environ.get("HUGGINGFACE_TOKEN")
     if hf_token:
         try:
             from huggingface_hub import login
@@ -50,7 +57,7 @@ async def startup_event():
     else:
         print("⚠ Warning: No HF_TOKEN found. Gated models may not work.")
         print("  Set HF_TOKEN in Space Settings → Secrets for gated model access.")
-    
+
     # Check if stamp model exists
     stamp_model_path = Path("stamp_detector/stamp_model.pt")
     if stamp_model_path.exists():
@@ -116,15 +123,18 @@ async def process_pdf(
             temp_pdf.write(content)
             temp_pdf_path = temp_pdf.name
 
-        # Process the PDF
+        # Process the PDF in a thread pool to allow concurrent requests
         try:
-            result = process_pdf_pipeline(
-                pdf_path=temp_pdf_path,
-                output_dir=tempfile.gettempdir(),  # Use temp directory
-                stamp_model_path="stamp_detector/stamp_model.pt",
-                stamp_conf=stamp_conf,
-                dpi=dpi,
-                save_intermediate=False
+            loop = asyncio.get_event_loop()
+            result = await loop.run_in_executor(
+                executor,
+                process_pdf_pipeline,
+                temp_pdf_path,
+                tempfile.gettempdir(),  # Use temp directory
+                "stamp_detector/stamp_model.pt",
+                stamp_conf,
+                dpi,
+                False  # save_intermediate
             )
 
             # Return the result as JSON
@@ -197,15 +207,18 @@ async def process_pdf_advanced(
             temp_pdf.write(content)
             temp_pdf_path = temp_pdf.name
 
-        # Process the PDF
+        # Process the PDF in a thread pool to allow concurrent requests
         try:
-            result = process_pdf_pipeline(
-                pdf_path=temp_pdf_path,
-                output_dir=tempfile.gettempdir(),  # Use temp directory
-                stamp_model_path=stamp_model_path,
-                stamp_conf=stamp_conf,
-                dpi=dpi,
-                save_intermediate=False
+            loop = asyncio.get_event_loop()
+            result = await loop.run_in_executor(
+                executor,
+                process_pdf_pipeline,
+                temp_pdf_path,
+                tempfile.gettempdir(),  # Use temp directory
+                stamp_model_path,
+                stamp_conf,
+                dpi,
+                False  # save_intermediate
             )
 
             # Return the result as JSON
@@ -349,15 +362,18 @@ async def process_pdf_from_url(
                         detail=f"Error fetching PDF from URL: {str(e)}"
                     )
 
-        # Process the PDF
+        # Process the PDF in a thread pool to allow concurrent requests
         try:
-            result = process_pdf_pipeline(
-                pdf_path=temp_pdf_path,
-                output_dir=tempfile.gettempdir(),
-                stamp_model_path=stamp_model_path,
-                stamp_conf=stamp_conf,
-                dpi=dpi,
-                save_intermediate=False
+            loop = asyncio.get_event_loop()
+            result = await loop.run_in_executor(
+                executor,
+                process_pdf_pipeline,
+                temp_pdf_path,
+                tempfile.gettempdir(),
+                stamp_model_path,
+                stamp_conf,
+                dpi,
+                False  # save_intermediate
             )
 
             # Return the result as JSON
