@@ -37,7 +37,8 @@ app.add_middleware(
 
 # Thread pool executor for running blocking CPU/GPU operations concurrently
 # This allows multiple PDFs to be processed in parallel
-executor = ThreadPoolExecutor(max_workers=4)  # Adjust based on your GPU/CPU capacity
+# Adjust based on your GPU/CPU capacity
+executor = ThreadPoolExecutor(max_workers=4)
 
 
 @app.on_event("startup")

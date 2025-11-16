@@ -36,7 +36,8 @@ def detect_signatures(image_path, model=None, output_dir=None, signatures_dir=No
         else:
             try:
                 # Get HF token from environment (for gated models)
-                hf_token = os.environ.get("HF_TOKEN") or os.environ.get("HUGGINGFACE_TOKEN")
+                hf_token = os.environ.get(
+                    "HF_TOKEN") or os.environ.get("HUGGINGFACE_TOKEN")
                 model_path = hf_hub_download(
                     repo_id="tech4humans/yolov8s-signature-detector",
                     filename="yolov8s.pt",
